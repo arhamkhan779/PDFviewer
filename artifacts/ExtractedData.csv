@@ -1,0 +1,873 @@
+ID,Extracted Text
+DOC_0001,"5
+e Transaction Processing
+La Recovery & Concurrency Control
+4
+a
+Y What is a transaction
+| A’transaction is the basic logical unit of execution in an
+# information system. A transaction is a sequence of operations
+¢ithat must be executed as a whole, taking a consistent (&
+Correct) database state into another consistent (& correct)
+. database state;
+* A ccollection of actions that make consistent transformations of
+system states while preserving system consistency
+«* An indivisible unit of processing
+database in a database in a
+consistent state consistent state
+i
+Pecan Transaction execution of Transaction end Transaction
+database may be
+temporarily in an
+inconsistent state
+during execution
+1
+ ¥ Desirable Properties of ACID Transactions
+LA Atomicity: a transaction is an atomic unit of processing and
+“itis either performed entirely or not at all
+{C Consistency Preservation: a transaction's correct execution
+~ must take the database from one correct state to another
+“| Jsolation/Independence: the updates of a transaction must
+* * not be made visible to other transactions until it is committed
+(solves the temporary update problem)
+
+D Durability (or Permanency): if a transaction changes the
+database and is committed, the changes must never be lost
+because of subsequent failure
+
+o Serialisability: ttansactions are considered serialisable if the
+
+\ effect of running them in an interleaved fashion is equivalent
+*®  torunning them serially in some order
+¥Y Requirements for Database Consistency
+|  # Concurrency Control
+2 * »* Most DBMS are multi-user systems.
+; # The concurrent execution of many different transactions
+7 submitted by various users must be organised such that
+(5 each transaction does not interfere with another transaction
+. re with one another in a way that produces incorrect results.
+al «# The concurrent execution of transactions must be such that
+e each transaction appears to execute in isolation.
+* Recovery ge
+4 «# System failures, either hardware or software, must not result
+® in an inconsistent database
+2
+ ¥ Transaction as a Recovery Unit
+| @ [fan error or hardware/software crash occurs between the begin and
+= ; yend, the database will be inconsistent
+u % * Computer Failure (system crash)
+La «# A transaction or system error
+J = * Local errors or exception conditions detected by the transaction
+ee Concurrency control enforcement
+' © «# Disk failure
+~ # Physical problems and catastrophes
+* The database is restored to some state from the past so that a correct
+state—close to the time of failure—can be reconstructed from the past
+state.
+* A DBMS ensures that if a transaction executes some updates and then a
+failure occurs before the transaction reaches normal termination, then
+\ those updates are undone.
+* The statements COMMIT and ROLLBACK (or their equivalent) ensure
+Transaction Atomicity
+¥ Recovery
+| Mirroring
+2 # keep two copies of the database and maintain them simultaneously
+» *# periodically dump the complete state of the database to some form of
+~ tertiary storage ( )
+#* System Logging
+# the log keeps track of all transaction operations affecting the values of
+database items. The log is kept on disk so that it is not affected by
+& failures except for disk and catastrophic failures.
+” |
+fp —
+td
+3
+ Y Recovery from Transaction Failures
+fF __— Catastrophic failure
+2 » * Restore a previous copy of the database from archival backup
+. * Apply transaction log to copy to reconstruct more current state
+7 by redoing committed transaction operations up to failure point
+4 __, * Incremental dump + log each transaction
+- Non-catastrophic failure
+# Reverse the changes that caused the inconsistency by undoing
+the operations and possibly redoing legitimate changes which
+were lost
+* The entries kept in the system log are consulted during
+recovery.
+\ * No need to use the complete archival copy of the database.
+Y Transaction States
+| # For recovery purposes the system needs to keep track of when a
+: 3 transaction starts, terminates and commits.
+ve Begin_Transaction: marks the beginning of a transaction execution;
+End_Transaction: specifies that the read and write operations have ended and
+marks the end limit of transaction execution (but may be aborted because of
+8 ad control);
+-* Commit_Transaction: signals a successful end of the transaction. Any updates
+: executed by the transaction can be safely committed to the database and will not
+be undone;
+# Rollback (or Abort): signals that the transaction has ended unsuccessfully. Any
+changes that the transaction may have applied to the database must be undone;
+# Undo: similar to ROLLBACK but it applies to a single operation rather than to a
+whole transaction;
+* Redo: specifies that certain transaction operations must be redone to ensure
+\ that all the operations of a committed transaction have been applied successfully
+» tothe database;
+4
+ Entries in the System Log
+
+For every transaction a unique transaction-id is generated Credit_labmark (sno
+
+8 by the system. NUMBER, cno CHAR, credit
+
+. [start_transaction, transaction-id]: the start of oid mark NUMBER;
+
+% execution of the transaction identified by transaction-id | new_mark NUMBER;
+
+. [read_item, transaction-id, X]: the transaction identified] sELEcT labmark INTO
+
+,, reads the value of database item X. onagnark eRom enrol a
+a - studno = sno an
+
+» Optional in some protocols. courseno = cno FOR UPDATE
+
+* [write_item, transaction-id, X, old_value, new_value]: | OF labmark;
+the transaction identified by transaction-id changes the new mark :< old mark +
+value of database item X from old_value to new_value credit; -
+
+*# [commit, transaction-id]: the transaction identified by \UPDATE enrol SET labmark
+transaction-id has completed all accesses to the = newark WHERE studno =
+database successfully and its effect can be recorded ‘
+
+i permanently (committed) COMMIT;
+
+a
+
+* [abort, transaction-id]: the transaction identified by EXCEPTION
+transaction-id has been aborted WHEN OTHERS THEN
+
+ROLLBACK ;
+END credit_labmark;
+Transaction execution
+4
+' A transaction reaches its commit point when all
+1 * operations accessing the database are completed
+
+% ’ and the result has been recorded in the log. It then
+
+¢ writes a [commit, transaction-id].
+
+, [BEGIN END \
+
+~_ | TRANSACTIO! TRANSACTION \
+4 partially
+; A t © sa commited
+FEA WE ROLLBACK \ROLLBACK
+
+If a system failure occurs, searching the log and rollback the transactions that
+
+4 have written into the log a
+
+a [start_transaction, transaction-id]
+
+[write_item, transaction-id, X, old_value, new_value]
+but have not recorded into the log a [commit, transaction-id]
+5
+ Read and Write Operations of a Transaction
+| # Specify read or write operations on the database items that are executed
+3 gas part of a transaction
+% * read_item(X):
+La * reads a database item named X into a program variable also named X.
+, a 1. find the address of the disk block that contains item X
+. re 2. copy that disk block into a buffer in the main memory
+oO a 3. copy item X from the buffer to the program variable named
+* write_item(X):
+* writes the value of program variable X into the database item named X.
+1. find the address of the disk block that contains item X
+2. copy that disk block into a buffer in the main memory
+3. copy item X from the program variable named X into its current location
+in the buffer store the updated block in the buffer back to disk (this step
+updates the database on disk)
+4
+* — ——_
+x ||
+Checkpoints in the System Log
+ua A [checkpoint] record is written periodically into the
+*~ log when the system writes out to the database on
+2 disk the effect of all WRITE operations of committed CD
+t transactions.
+# All transactions whose [commit, transaction-id]
+* eéntries can be found in the system log will not require
+their WRITE operations to be redone in the case of a <¢ >
+» System crash.
+* Before a transaction reaches commit point, force-
+write or flush the log file to disk before commit
+transaction.
+* Actions Constituting a Checkpoint < >»
+# temporary suspension of transaction execution
+« forced writing of all updated database blocks in main =>
+\ memory buffers to disk
+% * writing a [checkpoint] record to the log and force writing
+the log to disk
+# resuming of transaction execution
+6
+ v Write Ahead Logging
+‘In place” updating protocols: Overwriting data in situ
+© Deferred Update: Immediate Update:
+t no actual update of the «# the database may be updated
+é. database until after a by some operations of a
+oe transaction reaches its transaction before it reaches its
+ZA commit point commit point.
+* 14. Updates recorded in log 1. Update X recorded in log
+2. Transaction commit point 2. Update X in database ;
+. Force log to the disk 3. Update Y recorded in log ENDO.
+at Update the database 4. Transaction commit’point
+3. Force log to the disk 1
+FAILURE! 4. Update Y in databa$e ReDOY
+LLREDO database from log
+\ entries
+No UNDO necessary because * Undo in reverse order in log
+database never altered * Redo in committed log order
+«uses the write_item log entry
+Y Transaction as a Concurrency Unit
+| _—s * ‘Transactions must be synchronised correctly to
+2 > guarantee database consistency on
+4 2
+: ™ ce
+: ad 6m A toB g
+12 3
+7 2
+Transfer £300 =
+fromC toA g
+Net result
+\ Account A 800
+Account B 500
+Account C 400
+7
+ ¥ Transaction scheduling algorithms
+| * Transaction Serialisability
+ied « The effect on a database of any number of transactions
+% i executing in parallel must be the same as if they were
+% . executed one after another
+.; IMM
+o — Tl
+# Problems due to the Concurrent Execution of
+Transactions
+«# The Lost Update Problem
+\ # The Incorrect Summary or Unrepeatable Read Problem
+«# The Temporary Update (Dirty Read) Problem
+Y The Lost Update Problem
+i Two transactions accessing the same database item have their operations
+) interleaved in a way that makes the database item incorrect X=4
+t T1: (joe) T2: (fred) Xx Y Y=8
+ro read_item(X); q N=2
+e: X= X-N; 2 M=3
+¥ read_item(X); 4
+; X= X+M; 7
+y write_item(X); 2
+read_item(Y); 8
+write_item(X); 7
+Y:=Y+N; 10
+write_item(Y); 10
+\ item X has incorrect value because its update from T1 is “lost” (overwritten)
+* 72 reads the value of X before T1 changes it in the database and hence the
+updated database value resulting from T1 is lost
+8
+ The,Incorrect Summary or Unrepeatable Read Problem
+# ,One transaction is calculating an aggregate summary function on a
+i number of records while other transactions are updating some of these
+‘ } records.
+% * The aggregate function may calculate some values before they are
+i updated and others after.
+a a TI: T2: T1 |T2 |Sum
+5 4 sum:= 0; 0
+T2teads X read_item(A); 4
+after N is sum:= sum + A; 4
+subtracted and read_item(X);. ; 4
+reads Y before X:= X-N; . 2
+N is added, so write_item(X); 2
+a wrong read_item(X); 2
+summary is the sum:= sum + X; 6
+\ result read_item(Y); 8
+a sum:= sum + Y; 14
+read_item(Y); 8
+Y:=Y+N; 10
+write_item(Y); 10
+¥ Dirty Read or The Temporary Update Problem
+L * One transaction updates a database item and then the transaction fails.
+: ; he updated item is accessed by another transaction before it is changed
+© back to its original value
+¥ ' T1: (joe) T2: (fred) Database |Log |Log
+doe books old |new
+“seaton |read_item(X); 4
+“ight X X= X-N; 2
+; write_item(X); 2 4 2
+* read_item(X); 2
+X:= X-N; -1
+write_item(X); -1/2 -1
+Joe failed write (X) 4 rollback T1
+cancels |
+og
+Fred books seat on flight X
+4 because Joe was on Flight X
+a
+# transaction T1 fails and must change the value of X back to its old value
+* meanwhile T2 has read the “temporary” incorrect value of X
+9
+ ¥Y Schedules of Transactions
+| * A schedule S of n transactions is a sequential 7
+# Ordering of the operations of the n transactions.
+t * The transactions are interleaved
+Se . + . tape write X
+ae A schedule maintains the order of operations within
+the individual transaction. T2
+’ |» For each transaction T if operation a is performed in T d
+""before operation b, then operation a will be performed wnt x
+before operation b in S. write x
+# The operations are in the same order as they were before
+the transactions were interleaved Ss
+* Two operations conflict if they belong to different read x
+| “transactions, AND access the same data item AND read x
+a . .
+one of them is a write. write x
+¥ Serial and Non-serial Schedules
+| — * Aschedule S is serial if, for every transaction T
+7 participating in the schedule, all of T's operations are
+v executed consecutively in the schedule; otherwise it
+& is called non-serial.
+= _—-* Non-serial schedules mean that transactions are
+‘ o interleaved. There are many possible orders or
+B schedules.
+* Serialisability theory attempts to determine the
+‘correctness’ of the schedules.
+#* A schedule S of n transactions is serialisable if it is
+equivalent to some serial schedule of the same n
+\ transactions.
+10
+ Y Example of Serial Schedules
+| © @ Schedule A *Schedule B
+411: T2: T1: T2:
+read_item(X); read_item(X);
+X:= X-N; X:=X+M;
+| write_item(X); write_item(X);
+read_item(Y); read_item(X);
+Y:=Y +N; X= X-N;
+write_item(Y); write_item(X);
+read_item(X); read_item(Y),
+X:=X+M; Yi=Y +N;
+write_item(X); write_item(Y);
+i
+a
+Y Example of Non-serial Schedules
+; * Schedule C *Schedule D
+yt
+t T1: T2: T1: T2:
+read_item(X); read_item(X);
+7 |/X:= X-N; X:= X-N;
+
+read_item(X); write_item(X);
+
+X:= X+M; read_item(X);
+write_item(X); X= X+M;
+read_item(Y); write_item(X);
+
+write_item(X); read_item(Y);
+
+Y:=Y +N; Y:=Y + N;
+write_item(Y); write_item(Y);
+i We have to figure out whether a schedule is equivalent
+to a serial schedule
+i.e. the reads and writes are in the right order
+11
+ Precedence graphs (assuming read X before write X)
+P TH: T2: T1: T2:
+) » | |read_item(X); read_item(X);
+X= X-N; X:= X+M;
+: write_it ); __ write_item(X);
+¥ : read_item(Y\ read_item(X);
+> |\V:=Y +N; X= X-N;
+~ ._||write_item(Y); write_item(X);
+A read_item(X); read_item(Y);
+Fe X= X+M; Y:=Y +N;
+x write_item(X); write_item(Y);
+T1: T2: T1: T2:
+read_item(X); read_item(X);
+X:= HN; X:= X-N;
+read_item(X); write_item(X);
+X= X+M; read_item(X);
+write_item(X); X= X + M;
+\ read_item(Y); write_item(X);
+» write_item(X); read_item(Y);
+Y:=KEN; Y:=Y +N;
+write_itel 5 write_item(Y);
+¥ View Equivalence and View Serialisability
+*  ® View Equivalence:
+> # As long as each read operation of a transaction reads the
+2 result of the same write operation in both schedules, the
+t write operations of each transaction must produce the same
+4 results.
+se «# The read operations are said to see the same view in both
+lh schedules
+a « The final write operation on each data item is the same in
+both schedules, so the database state should be the same at
+the end of both schedules
+* Aschedule S is view serialisable if it is view
+equivalent to a serial schedule.
+N * Testing for view serialisability is NP-complete
+a
+12
+ ¥Y Semantic Serialisability
+|""  #Some applications can produce schedules that are
+2 > correct but aren’t conflict or view serialisable.
+¢ * e.g. Debit/Credit transactions (Addition and
+4 subtraction are commutative)
+read_item(X);  read_item(Y); Schedule
+X=X10; 0 YEY-20;
+write_item(X); — write_item(Y); read_item(X);
+read_item(Y);  read_item(Z); X:=X-10;
+Y:=Y¥+10; Z:+Z+20; write_item(X);
+write_item(Y); — write_item(Z); read_item(Y);
+Y:=Y-20;
+‘ write_item(Y);
+a read_item(Y);
+Y:=Y+10;
+write_item(Y);
+Y Methods for Serialisability
+(x ‘Multi-version Concurrency Control techniques keep the old
+Pa ®walues of a data item when that item is updated.
+fi Timestamps are unique identifiers for each transaction and
+¢ are generated by the system. Transactions can then be
+. “ordered according to their timestamps to ensure
+© serialisability.
+
+* Protocols that, if followed by every transaction, will ensure
+serialisability of all schedules in which the transactions
+participate. They may use /ocking techniques of data items
+to prevent multiple transactions from accessing items
+concurrently.
+
+\e Pessimistic Concurrency Control
+*# Check before a database operation is executed by locking data items
+before they are read and written or checking timestamps
+13
+ Locking Techniques for Concurrency Control
+| —_— * The concept of locking data items is one of the main
+4 techniques used for controlling the concurrent
+? execution of transactions.
+La « A lock is a variable associated with a data item in the
+fo: database. Generally there is a lock for each data item
+a in the database.
+‘| #* Alock describes the status of the data item with
+® respect to possible operations that can be applied to
+that item. It is used for synchronising the access by
+concurrent transactions to the database items.
+* A transaction locks an object before using it
+# When an object is locked by another transaction, the
+\ requesting transaction must wait
+Types of Locks
+| -__—s* Binary locks have two possible states:
+aS 1. locked (lock_item(X) operation) and
+? 2. unlocked (unlock_item(X) operation
+i # Multiple-mode locks allow concurrent access to the
+fo: same item by several transactions. Three possible
+states:
+a 1. read locked or shared locked (other transactions are allowed
+8 to read the item)
+2. write locked or exclusive locked (a single transaction
+exclusively holds the lock on the item) and
+3. unlocked.
+# Locks are held in a lock table.
+* upgrade lock: read lock to write lock
+\ *# downgrade lock: write lock to read lock
+14
+ Loéks don't guarantee serialisability: Lost Update
+F a T1: (joe) T2: (fred) x Y
+1 & write lock(x) | |
+¢ read_item(X); 4
+X= X-N; 2
+“ unlock(X)
+ek: write_lock(X)
+ye: read_item(X); |4
+e X:=X+M; 7
+x unlock(X)
+write_lock(X)
+write_item(X); 2
+unlock(X)
+write_lock(Y)
+read_item(Y); 8
+write_lock(X)
+write_item(X); |7
+4 unlock(X)
+* Y= Y+N; 10
+write_item(Y); 10
+unlock(Y)
+¥ Locks don’t guarantee serialisability
+[ X=20, Y=30
+3 »
+¥ qi read_lock(Y); read_lock(X);
+fo read_item(Y); read_item(X);
+e: unlock(Y); unlock(X);
+ef write_lock(X); write_lock(Y);
+re read_item(X); read_item(Y);
+X:=X+Y; Y:=X+Y;
+write_item(X); write_item(Y);
+unlock(X); unlock(Y);
+X is unlocked too early
+Y is unlocked too early
+\ # Schedule 1: T1 followed by T2 => X=50, Y=80
+#* Schedule 2: T2 followed by T1 => X=70, Y=50
+15
+  Non-serialisable schedule S that uses locks
+- x220 11 T2
+read_lock(Y);
+YP Y=30 Senay
+¢ unlock(Y);
+a read_lock(X);
+or read_item(X);
+Lg unlock(X);
+' write_lock(Y);
+a read_item(Y);
+Y:=X+Y;
+write_item(Y);
+unlock(Y);
+write_lock(X);
+read_item(X);
+‘ X:=X+Y;
+» write_item(X);
+unlock(X);
+result of S > X=50, Y=50
+Ensuring Serialisability: Two-Phase Locking
+| * All locking operations (read_lock, write_lock) precede the
+
+2 first unlock operation in the transactions.
+
+¢ Two phases:
+
+_* expanding phase: new locks on items can be acquired but none
+
+"" ~__—ccan be released
+
+)* shrinking phase: existing locks can be released but no new ones
+
+* * can be acquired
+
+s X=20, Y=30
+read_lock(Y); read_lock(X);
+read_item(Y); read_item(X);
+write_lock(X); write_lock(Y);
+unlock(Y); unlock(X);
+
+\ read_item(X); read_item(Y);
+
+» X:=X+Y; Y:=X+Y;
+write_item(X); write_item(Y);
+unlock(X); unlock(Y);
+
+16
+ ¥Y Two-Phasing Locking
+| #* Basic 2PL
+2 % When a transaction releases a lock, it may not request another lock
+‘ j lock point t ;
+a H obtain lock
+a number f }
+Lg of locks release lock
+Phase 1 : Phase 2
+BEGIN END
+#*, Conservative 2PL or static 2PL
+\ » a transaction locks all the items it accesses before the transaction
+begins execution
+* pre-declaring read and write sets
+¥Y Two-Phasing Locking
+| __» Strict 2PL a transaction does not release any of its
+2 > locks until after it commits or aborts
+t * leads to a strict schedule for recovery
+a 5 f obtain lock
+i number t release lock
+a of locks
+Transaction
+4 BEGIN period of data END duration
+* item use
+17
+ ¥Y Locking Problems: Deadlock
+i * Each of two or more transactions is waiting for the other to
+’ release an item. Also called a deadly embrace
+pS
+&
+a 11 T2
+m read_lock(Y);
+read_item(Y);
+read_lock(X);
+read_item(X);
+write_lock(X);
+write_lock(Y);
+i
+a
+Y Deadlocks and Livelocks
+| /# Deadlock prevention protocol:
+‘ > « conservative 2PL
+% ; « transaction stamping (younger transactions aborted)
+¢ e no waitin
+4 g
+foe - e cautious waiting
+a e time outs
+’ # Deadlock detection (if the transaction load is light or
+“transactions are short and lock only a few items)
+* wait-for graph for deadlock detection
+« victim selection 1D
+* cyclic restarts
+* Livelock: a transaction cannot proceed for an
+‘ indefinite period of time while other transactions in
+» the system continue normally.
+« fair waiting schemes (i.e. first-come-first-served)
+18
+ Y Locking Granularity
+| ""  # Adatabase item could be
+‘ > * a database record
+% ; # afield value of a database record
+La * adisk block
+fo: # the whole database
+|. * Trade-offs
+F * coarse granularity
+8 « the larger the data item size, the lower the degree of
+concurrency
+« fine granularity
+« the smaller the data item size, the more locks to be
+managed and stored, and the more lock/unlock
+operations needed.
+\
+oa
+e Other Recovery and Concurrency Strategies
+4
+a
+19
+ ¥ Recovery: Shadow Paging Technique
+| #° Data isn’t updated ‘in place’ Database data
+72 . . pages/blocks
+1 * The database is considered to
+{be made up of a number of n p bl page 5
+~ __fixed-size disk blocks or pages, age table page 1
+: J for recovery purposes. a / page 4
+“® A page table with n entries is pst
+~ constructed where the ith page page 2
+table entry points to the ith 8 pages
+: page 3
+database page on disk.
+* Current page table points to
+N most recent current database
+% pages on disk
+Y Shadow Paging Technique
+| When a transaction <a pags (lads)
+2 begins executing
+».* the current page table —_| Current page table page 5 (old)
+& is copied into a shadow fe ome t \ wees
+| page table
+"" ® shadow page table is page 4 ‘Ss 7
+""then saved pee
+# shadow page table is = page 2 (old) =
+never modified during 5
+transaction execution =W page 3 a=
+* writes operations—new page 6
+copy of database page
+‘ is created and current page 2 (new)
+a page table entry
+modified to point to page 5 (new)
+new disk page/block
+20
+ Y Shadow Paging Technique
+'® To recover from a failure Database data pages (Hods)
+2 # the state of the database before
+i ‘i ‘ i ‘i Qurrert page table 5 (dd)
+t yansanion erection is avatable a Page ozP 5
+a rough the shadow page table | 25 rae! (rctupctted)
+"" @ free modified pages
+_ ¥ discard currrent page table page 4 SY 7
+* that state is recovered by ; \ page 210k ng 3
+reinstating the shadow page table a —# \ ;
+to become the current page table | [5 page 4
+once more =\
+* Commiting a transaction \ page6
+« discard previous shadow page page? (rea)
+\ # free old page tables that it
+references page 5 (new)
+* Garbage collection
+Y Optimistic Concurrency Control
+(ad ‘No checking while the transaction is executing.
+eCheck for conflicts after the transaction.
+¢ Checks are all made at once, so low transaction execution
+~ overhead
+| # Relies on little interference between transactions
+_ ~~ » Updates are not applied until end_transaction
+_ « Updates are applied to /ocal copies in a transaction space.
+1. read phase: read from the database, but updates are applied only to
+local copies
+2. validation phase: check to ensure serialisability will not be validated if
+the transaction updates are actually applied to the database
+\ 3. write phase: if validation is successful, transaction updates applied to
+» database; otherwise updates are discarded and transaction is aborted
+and restarted.
+21
+ ¥ Validation Phase
+| #* Use transaction timestamps
+#) # write_sets and read_sets maintained
+(/* Transaction B is committed or in its validation phase
+""4 . Validation Phase for Transaction A
+: #7To check that TransA does not interfere with TransB the
+_ following must hold:
+*# TransB completes its write phase before TransA starts its reads
+phase
+# TransA starts its write phase after TransB completes its write phase,
+and the read set of TransA has no items in common with the write
+set of TransB
+\ « Both the read set and the write set of TransA have no items in
+* common with the write set of TransB, and TransB completes its read
+phase before TransA completes its read phase.
+¥Y Conclusions
+| * Transaction management deals with two key
+2 > requirements of any database system:
+t #* Resilience
+< # in the ability of data surviving hardware crashes and
+a software errors without sustaining loss or becoming
+: i a inconsistent
+_ * Access Control
+« in the ability to permit simultaneous access of data multiple
+users in a consistent manner and assuring only authorised
+access
+4
+a
+22
+"
+DOC_0002,"Faryal Malik Phone: 92 311-0654177 www.linkedin.com/in/faryalmalikk
+faryalmalik671@gmail.com
+
+Passionate Environmentalist. Seeking opportunities where | can utilize my analytical and technical
+
+skills to solve real life data analytics problems.
+
+Education
+
+Bachelors in Environmental Science -- University Of Sindh, Jamshoro, Sindh 2022
+
+Intermediate --Board of Intermediate and secondary Education 2018
+
+Matriculation --Board of Intermediate and secondary Education 2016
+
+Diploma (MTT Montessori Teachers Training) - Hyderabad, Sindh (Continue)
+
+Skills
+
+Microsoft Word, Microsoft PowerPoint, Microsoft Excel
+
+Experienced administrative, Professional Marketing
+
+Creative, Analytical ,Conceptual Thinker and Excellent Problem Solving Skills
+
+Ability to Work Under Pressure
+
+Project Management, Event Management Skills, Team Management
+
+Experience:
+
+Serve as an Home Teacher For 1 Year At Hyderabad Institute Of art science and technology
+
+Serve as an Assistant Teacher For 1 year at University Of Sindh Jamshoro
+
+Serve as an Teacher for 1 year at Sac Academy, Hyderabad
+
+Serve as an Teacher for 3 Months at White House Academy, Hyderabad
+
+Serve as an Teacher For 2 Months at Pride Academy, Hyderabad
+
+Member at Native Youth Club For Climate Change For 1 Month
+
+Support Campaign Of Liquid Trees For a Cooler Tomorrow
+
+Does Fellowship at OMLAS (One Million Leaders Asia)
+
+Attend Training Session at Sindh Forest and Wildlife training center Miani Hyderabad
+
+Certifications and Awards
+
+English Language Certificate By EF-Standard English Test 2024
+
+English Language Proficiency By Dominos Hyderabad
+
+Project Management By Great Learnings
+
+Certificate Of Participation By WWF Pakistan
+
+Certificate Of Participation By Government College University Hyderabad
+
+Certification Of part of United Nations Climate Change Guide By United Nations
+
+2
+Human Health And Climate Change By World Health Organization
+An Introduction to Climate Change and Human Rights
+Language: English, Urdu, Sindhi, Hindko
+"
+DOC_0003,"Faryal Malik Phone: 92 311-0654177 www.linkedin.com/in/faryalmalikk
+faryalmalik671@gmail.com
+
+Passionate Environmentalist. Seeking opportunities where | can utilize my analytical and technical
+
+skills to solve real life data analytics problems.
+
+Education
+
+Bachelors in Environmental Science -- University Of Sindh, Jamshoro, Sindh 2022
+
+Intermediate --Board of Intermediate and secondary Education 2018
+
+Matriculation --Board of Intermediate and secondary Education 2016
+
+Diploma (MTT Montessori Teachers Training) - Hyderabad, Sindh (Continue)
+
+Skills
+
+Microsoft Word, Microsoft PowerPoint, Microsoft Excel
+
+Experienced administrative, Professional Marketing
+
+Creative, Analytical ,Conceptual Thinker and Excellent Problem Solving Skills
+
+Ability to Work Under Pressure
+
+Project Management, Event Management Skills, Team Management
+
+Experience:
+
+Serve as an Home Teacher For 1 Year At Hyderabad Institute Of art science and technology
+
+Serve as an Assistant Teacher For 1 year at University Of Sindh Jamshoro
+
+Serve as an Teacher for 1 year at Sac Academy, Hyderabad
+
+Serve as an Teacher for 3 Months at White House Academy, Hyderabad
+
+Serve as an Teacher For 2 Months at Pride Academy, Hyderabad
+
+Member at Native Youth Club For Climate Change For 1 Month
+
+Support Campaign Of Liquid Trees For a Cooler Tomorrow
+
+Does Fellowship at OMLAS (One Million Leaders Asia)
+
+Attend Training Session at Sindh Forest and Wildlife training center Miani Hyderabad
+
+Certifications and Awards
+
+English Language Certificate By EF-Standard English Test 2024
+
+English Language Proficiency By Dominos Hyderabad
+
+Project Management By Great Learnings
+
+Certificate Of Participation By WWF Pakistan
+
+Certificate Of Participation By Government College University Hyderabad
+
+Certification Of part of United Nations Climate Change Guide By United Nations
+
+2
+Human Health And Climate Change By World Health Organization
+An Introduction to Climate Change and Human Rights
+Language: English, Urdu, Sindhi, Hindko
+"

@@ -1,0 +1,12 @@
+pyyaml
+pytesseract
+pillow
+pandas
+groq
+langchain
+python-dotenv
+langchain_groq
+streamlit
+langchain_google_genai
+google-generativeai
+PyMuPDF

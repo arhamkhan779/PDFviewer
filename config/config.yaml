@@ -1,0 +1,7 @@
+root: artifacts
+
+
+PATHS:
+   TESSERACT: Tesseract-OCR\tesseract.exe
+   POPPPLER:  poppler-24.08.0\Library\bin
+   DATA: artifacts\Data.csv
