@@ -30,7 +30,7 @@ try:
     logging.info("Loading Artifacts ----- Start")
     
     root = "artifacts"
-    tesseract_path = os.path.join(os.getcwd(), "Tesseract-OCR", "tesseract.exe")
+    tesseract_path = "/usr/bin/tesseract"
     poppler_path = os.path.join(os.getcwd(), "poppler-24.08.0", "Library", "bin")
     data_file = os.path.join(root, "ExtractedData.csv")
 
